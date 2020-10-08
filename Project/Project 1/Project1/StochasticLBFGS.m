@@ -1,105 +1,116 @@
-function gnorm = StochasticLBFGS(fun,gfun,Hvec,Y,w)
-%%  the Rosenbrock function and parameters
-a = 5;
-% func = @(x,y)(1-x).^2 + a*(y - x.^2).^2;  % Rosenbrock's function
-% gfun = @(x)[-2*(1-x(1))-4*a*(x(2)-x(1)^2)*x(1);2*a*(x(2)-x(1)^2)]; % gradient of f
-% Hfun = @(x)[2 + 12*a*x(1)^2 - 4*a*x(2), -4*a*x(1); -4*a*x(1), 2*a]; % Hessian of f
-gam = 0.9; % line search step factor
-jmax = ceil(log(1e-14)/log(gam)); % max # of iterations in line search
-eta = 0.5; % backtracking stopping criterion factor
+function [w,f,gnorm] = StochasticLBFGS(fun,gfun,Hvec,Y)
+iter = 1e3;
 tol = 1e-10;
-m = 5; % the number of steps to keep in memory
-%% 
-close all
-figure;
-hold on; grid;
-x0 = [-1.3;1.5];  %initial guess
-xstar = [1;1]; % the global minimizer
-[xx,yy]=meshgrid(linspace(-2,2,1000),linspace(-1.5,2,1000));
-ff = func(xx,yy);
-plot(xstar(1),xstar(2),'r.','Markersize',40);
-daspect([1,1,1])
-col = [0.4,0.2,0];
-%
-s = zeros(2,m);
-y = zeros(2,m);
-rho = zeros(1,m);
-gnorm = zeros(1,1000);
-%
-n = size(Y,1);
-I=1:n;
-bsz = min(n,64); % batch size
 
-x = x0;
-g = gfun(x);
+n = size(Y,1);
+batch_g = 64;
+batch_h = 128;
+m = 5; % the number of steps to keep in memory
+M = 10; %# of steps of updating inverse of Hessian % batch size
+
+
+w0 = [-1;-1;1;1];  %initial guess
+
+
+s = zeros(4,m);
+y = zeros(4,m);
+rho = zeros(1,m);
+gnorm = zeros(iter,1);
+% f = zeros(iter,1);
+%
+w = w0;
+I = 1:n;
+g = gfun(I,Y,w);
 gnorm(1) = norm(g);
-plot(x(1),x(2),'.','color',col,'Markersize',20);
-fx = func(x(1),x(2));
-contour(xx,yy,ff,[fx,fx],'k','Linewidth',1);
+
+a = 0.1;
+
 % first do steepest decend step
-a = linesearch(x,-g,g,func,eta,gam,jmax);
-xnew = x - a*g;
-gnew = gfun(xnew);
-s(:,1) = xnew - x;
+r = randi([1,n],batch_g,1);
+g = gfun(I,Y,w);
+
+wnew = w - a.*g;
+gnew = gfun(I,Y,wnew);
+
+s(:,1) = wnew - w;
 y(:,1) = gnew - g;
 rho(1) = 1/(s(:,1)'*y(:,1));
-plot([x(1),xnew(1)],[x(2),xnew(2)],'Linewidth',2,'color',col);
-x = xnew;
+
+w = wnew;
 g = gnew;
 nor = norm(g);
-gnorm(2) = nor;
-plot(x(1),x(2),'.','color',col,'Markersize',20);
-fx = func(x(1),x(2));
-contour(xx,yy,ff,[fx,fx],'k','Linewidth',1);
-iter = 1;
-while nor > tol
-    if iter < m
-        I = 1 : iter;
+gnorm(1) = nor;
+f = zeros(iter,1);
+f(1) = fun(I,Y,w);
+
+
+k = 1;
+
+while k < iter
+    stepsize = 1./(1+k/2);
+    if k < m*M
+        upbd = ceil(k./M);
+        I = 1 : upbd;
         p = finddirection(g,s(:,I),y(:,I),rho(I));
     else
         p = finddirection(g,s,y,rho);
     end
-    [a,j] = linesearch(x,p,g,func,eta,gam,jmax);
-    if j == jmax
-        p = -g;
-        [a,j] = linesearch(x,p,g,func,eta,gam,jmax);
-    end
-    step = a*p;
-    xnew = x + step;
-    plot([x(1),xnew(1)],[x(2),xnew(2)],'Linewidth',2,'color',col);
-    gnew = gfun(xnew);
-    s = circshift(s,[0,1]); 
-    y = circshift(y,[0,1]);
-    rho = circshift(rho,[0,1]);
-    s(:,1) = step;
-    y(:,1) = gnew - g;
-    rho(1) = 1/(step'*y(:,1));
-    x = xnew;
-    g = gnew;
-    fx = func(x(1),x(2));
-    if nor > 1e-1
-        contour(xx,yy,ff,[fx,fx],'k','Linewidth',1);
-    end
-    plot(x(1),x(2),'.','color',col,'Markersize',20);
-    nor = norm(g);
-    iter = iter + 1;
-    gnorm(iter+1) = nor;
-end
-fprintf('L-BFGS: %d iterations, norm(g) = %d\n',iter,nor);
-set(gca,'Fontsize',16);
-xlabel('x_1','Fontsize',16);
-ylabel('x_2','Fontsize',16);
-gnorm(iter+1:end) = [];
-end
 
+    step = stepsize.*p;
+    wnew = w + step;
+    
+    if mod(k,M) == 0
+        s = circshift(s,[0,1]); 
+        y = circshift(y,[0,1]);
+        rho = circshift(rho,[0,1]);
+        
+        hess_seed1 = randi([1 n], 1, batch_h);
+        hess_seed2 = randi([1 n], 1, batch_h);
+        
+        g = gfun(hess_seed1,Y,wnew);
+        gnew = gfun(hess_seed2,Y,wnew);
+        
+        s(:,1) = step;
+        y(:,1) = gnew - g;
+        rho(1) = 1/(s(:,1)'*y(:,1));
+        
+    else
+        grad_seed = randi([1 n], 1, batch_g);
+        gnew = gfun(grad_seed,Y,w);
+        
+    end
+    
+    nor = norm(gnew);
+    if nor > .5
+        gnorm(k+1) = norm(g);
+        f(k+1) = fun(I,Y,w);
+    elseif k > 300 && nor > .1
+        gnorm(k+1) = norm(g);
+        f(k+1) = fun(I,Y,w);
+        
+    else
+        w = wnew;
+        g = gnew;
+        gnorm(k+1) = nor;
+        f(k+1) = fun(I,Y,w);
+    end
+    k = k+1;
+end
+    
+end
+        
+        
+   
 %%
-function [a,j] = linesearch(x,p,g,func,eta,gam,jmax)
+function [a,j] = linesearch(Y,w,p,g,fun,eta,gam,jmax)
     a = 1;
-    f0 = func(x(1),x(2));
+    n=size(Y);
+    I = 1:n;
+    f0 = fun(I,Y,w);
     aux = eta*g'*p;
     for j = 0 : jmax
-        xtry = x + a*p;
-        f1 = func(xtry(1),xtry(2));
+        wtry = w + a*p;
+        f1 = fun(I,Y,wtry);
         if f1 < f0 + a*aux
             break;
         else

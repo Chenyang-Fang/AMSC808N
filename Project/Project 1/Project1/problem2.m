@@ -1,4 +1,4 @@
-function problem2a()
+function problem2()
 close all
 %% read data
 A2012 = readmatrix('A2012.csv');
@@ -98,7 +98,7 @@ ylabel(str(i2),'Fontsize',fsz);
 zlabel(str(i3),'Fontsize',fsz);
 %% set up optimization problem
 [n,dim] = size(XX);
-lam = 0.01;
+lam = 0.01; %0.001,1
 Y = (label*ones(1,dim + 1)).*[XX,ones(n,1)];
 w = [-1;-1;1;1];
 fun = @(I,Y,w)fun0(I,Y,w,lam);

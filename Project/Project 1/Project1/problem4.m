@@ -1,4 +1,4 @@
-function Project1main()
+function problem4()
 close all
 %% read data
 A2012 = readmatrix('A2012.csv');
@@ -104,10 +104,11 @@ w = [-1;-1;1;1];
 fun = @(I,Y,w)fun0(I,Y,w,lam);
 gfun = @(I,Y,w)gfun0(I,Y,w,lam);
 Hvec = @(I,Y,w,v)Hvec0(I,Y,w,v,lam);
+normf = zeros(1000,100);
 
-[w,f,gnorm] = StochasticLBFGS(fun,gfun,Hvec,Y,w);
+[w,f,gnorm] = S_LBFGS(fun,gfun,Hvec,Y);
 
-fprintf('w = [%d,%d,%d], b = %d\n',w(1),w(2),w(3),w(4));
+% fprintf('w = [%d,%d,%d], b = %d\n',w(1),w(2),w(3),w(4));
 
 xmin = min(XX(:,1)); xmax = max(XX(:,1));
 ymin = min(XX(:,2)); ymax = max(XX(:,2));

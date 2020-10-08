@@ -115,6 +115,7 @@ Ave_F_SG = zeros(maxiter,num_batch);
 F_SINewton = zeros(maxiter+1,num_batch);
 Ave_F_SINewton = zeros(maxiter+1,num_batch);
 
+%% for the SG method
 for m = 1: num_batch
     tic
     for j = 1:iter
@@ -138,7 +139,17 @@ legend('batch size=32','batch size=64','batch size=128');
 title({['Plot of average function value f vs iteration number']
     ['for SG method ']});
 
-%%
+figure;
+hold on 
+plot(Ave_F_SG(1:50,1),'Linewidth',3);
+plot(Ave_F_SG(1:50,2),'Linewidth',3);
+plot(Ave_F_SG(1:50,3),'Linewidth',3);
+xlabel('Number of iteration');
+ylabel('Average function value');
+legend('batch size=32','batch size=64','batch size=128');
+title({['Plot of average function value f vs iteration number']
+    ['for SG method ']});
+%% for the SINewton method
 for m = 1: num_batch
     tic
     
@@ -163,7 +174,7 @@ legend('batch size=32','batch size=64','batch size=128');
 title({['Plot of average function value f vs iteration number']
     ['for Subsampled inexact Newton method']});
 
-%
+%% plot the figures
 figure;
 hold on 
 n = [32 64 128];
@@ -175,8 +186,8 @@ title('Comparison of running time bewteen two methods');
 %
 figure;
 hold on 
-plot(Ave_F_SINewton(1:2000,1));
-plot(Ave_F_SG(1:2000,1));
+plot(Ave_F_SINewton(:,1),'Linewidth',3);
+plot(Ave_F_SG(:,1),'Linewidth',3);
 xlabel('Number of iteration');
 ylabel('Average function value');
 legend('Subsampled inexact Newton method','SG method');
@@ -185,8 +196,8 @@ title({['Comparison of average function value f vs iteration number']
 
 figure;
 hold on 
-plot(Ave_F_SINewton(1:2000,2));
-plot(Ave_F_SG(1:2000,2));
+plot(Ave_F_SINewton(:,2),'Linewidth',3);
+plot(Ave_F_SG(:,2),'Linewidth',3);
 xlabel('Number of iteration');
 ylabel('Average function value');
 legend('Subsampled inexact Newton method','SG method');
@@ -195,8 +206,8 @@ title({['Comparison of average function value f vs iteration number']
 
 figure;
 hold on 
-plot(Ave_F_SINewton(1:2000,3));
-plot(Ave_F_SG(1:2000,3));
+plot(Ave_F_SINewton(:,3),'Linewidth',3);
+plot(Ave_F_SG(:,3),'Linewidth',3);
 xlabel('Number of iteration');
 ylabel('Average function value');
 legend('Subsampled inexact Newton method','SG method');

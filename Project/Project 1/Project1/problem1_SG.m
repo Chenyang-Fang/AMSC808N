@@ -1,4 +1,4 @@
-function problem1b()
+function problem1_SG()
 close all
 %% read data
 A2012 = readmatrix('A2012.csv');
