@@ -47,7 +47,7 @@ f(1) = fun(I,Y,w);
 k = 1;
 
 while k < iter
-    stepsize = 1./(1+k/2);
+    stepsize = 1./(1+k);
     if k < m*M
         upbd = ceil(k./M);
         I = 1 : upbd;

@@ -133,6 +133,7 @@ plot((0:niter-1)',normf,'Linewidth',2);
 set(gca,'Fontsize',fsz);
 xlabel('k','Fontsize',fsz);
 ylabel('f','Fontsize',fsz);
+title('Funcation value f when \lambda = 0.01');
 %%
 figure;
 hold on;
